@@ -1,74 +1,115 @@
-# Hi, I'm Paula Arias 👋
+# 🎸 Cigar-Box Electric Guitar | 196 Hz Notch Filter
 
-### Electrical & Computer Engineering at USC
+![Banner: tune out the open G, 196 Hz twin-T notch filter and KiCad PCB render](hero.png)
 
-I build and validate hardware across the stack: Verilog RTL, FPGA prototypes, embedded firmware, PCBs, and physical measurements. My current research explores how to verify AI-generated circuits beyond syntax and simulation.
+<p align="center">
+  <strong>Analog filter design · Custom PCB · SMD and through-hole assembly · Bench debugging</strong>
+</p>
 
-**Digital design & verification** · **Embedded systems** · **PCB design & bring-up** · **AI-assisted EDA**
+We built a six-string cigar-box electric guitar with a custom analog PCB designed to suppress the **open G string at 196 Hz**. The circuit uses a tunable **active twin-T notch filter**; the guitar pickup feeds the board, and the filtered signal goes to an output jack and speaker. This was an EE 202L project by **Paula Arias and Lucia Miles**.
 
-[Email me](mailto:ariasgua@usc.edu) · [LinkedIn](https://www.linkedin.com/in/paula-arias-guardia/) · [Explore my projects](#-featured-hardware-projects)
+> **The short version:** We calculated the filter, simulated it in LTspice, tested it on a breadboard, laid out and assembled a KiCad PCB, then diagnosed and repaired a missing capacitor on the fabricated board. The final guitar audibly suppressed the target note. Its selectivity was lower than our original calculation, and the report does not give a measured attenuation in dB.
 
----
+**Explore:** [The build](#-the-build) · [Signal path](#-how-the-circuit-works) · [The repair](#-the-repair) · [Design files and photos](#-open-the-lab-notebook) · [Results](#-what-we-verified)
 
-## 🔭 What I'm working on
+## 📸 The build
 
-At USC's Kapadia Lab, I develop Python-based EDA workflows that turn functional specifications into Verilog RTL and SPICE netlists, then test generated designs in simulation and against physical hardware. Our work has validated **105+ circuit categories** and includes oscilloscope comparisons with hand-built circuits and an FPGA verification workflow. I collaborate with Ph.D. researchers and contribute empirical results toward a peer-reviewed publication.
+| Guitar internals during testing | Hand-assembled PCB |
+| :--: | :--: |
+| [![Open cigar-box guitar showing the pickup, PCB wiring, LED and output connections](guitar-internals.jpg)](guitar-internals.jpg) | [![Custom PCB populated with analog components during assembly](assembled-pcb.jpg)](assembled-pcb.jpg) |
+| *The pickup, power wiring, switch, LED and output jack inside the box.* | *Mixed SMD and through-hole hardware on the custom PCB.* |
 
-I'm pursuing a **B.S. in Electrical & Computer Engineering at USC**, expected May 2028 (GPA: 3.8/4.0).
+The body is a cigar box with a shaped wooden neck, six strings, a pickup, an output jack, and a power switch with an LED indicator. The PCB lives inside the body. The pictures above show the internal build and board assembly; they are not photos of the guitar's exterior.
 
----
+## 🎚️ How the circuit works
 
-## 🛠️ Technical toolkit
+```mermaid
+flowchart LR
+    A["Strings + pickup"] --> B["Input buffer"]
+    B --> C["Active twin-T notch"]
+    C --> D["Output buffer"]
+    D --> E["Output jack + speaker"]
+```
 
-| Area | Tools and methods |
+The twin-T network rejects a band centered near **196 Hz**, the fundamental of an open G3 string. Positive feedback adjusts the filter's quality factor, while potentiometers let us tune the notch. Unity-gain buffers isolate circuit sections. An **LM324** provides the op-amp stages, and a **TC7660 charge pump** derives a negative rail from the **9 V supply** for the analog signal path.
+
+| Design choice | Why it matters |
 | --- | --- |
-| **Digital hardware** | Verilog, RTL, FSMs, FPGA, VGA, Vivado, QuestaSim, directed testbenches, waveform debugging |
-| **Embedded systems** | ESP32, AVR, C++, Python, timers, interrupts, PWM, EEPROM, I2S, MQTT |
-| **Circuits & PCB** | KiCad, SPICE, LTspice, schematic capture, multilayer layout, analog filtering, LiPo charging and power regulation |
-| **Lab validation** | PCB bring-up, soldering, oscilloscopes, logic analyzers, multimeters, fault isolation, test automation |
-| **Programming & data** | Python, C++, MATLAB, Linux, Git, NumPy, Pandas, PyTorch, React |
+| **196 Hz target** | Aligns the notch with the open G3 fundamental. |
+| **0.22 µF capacitors** | Starting point for the calculated twin-T component values. |
+| **≈3.8 kΩ and ≈1.845 kΩ nominal resistances** | Calculated values for the target notch; trimmers support tuning in the assembled circuit. |
+| **KiCad + LTspice** | PCB layout and circuit simulation before assembly. |
 
----
+<details>
+<summary><strong>🔍 What does “notch filter” mean here?</strong></summary>
 
-## 🌟 Featured hardware projects
+A notch filter attenuates a narrow range of frequencies while allowing frequencies outside that range through. We designed this one around the **196 Hz fundamental** of the open G string. A real plucked string also has harmonics, so filtering its fundamental is different from deleting every part of the note. The finished filter worked audibly, but its measured quality factor was lower than planned. We do not have a quantified sweep or dB measurement to publish here.
 
-| Project | What I built or am building | Stack |
-| --- | --- | --- |
-| [🌅 Sunshine Sleep Mask](projects/sunshine-sleep-mask.md) | Wearable sleep system with adaptive light, audio, sensing, a custom PCB, and a companion interface. **In development.** | ESP32 · KiCad · C++ · I2S · LiPo |
-| [🎮 Flappy Bird FPGA](projects/flappy-bird-fpga.md) | Modular Verilog game with VGA rendering, movement, obstacles, collision detection, and directed verification. **In development.** | Verilog · RTL · FSMs · VGA · QuestaSim |
-| [🎸 Custom Electric Guitar PCB](projects/electric-guitar-pcb.md) | Guitar-shaped analog effects board with LM324 amplification, filtering, LEDs, assembly, and bench debugging. | Analog circuits · PCB · SMD |
-| [🌡️ AVR Temperature Controller](projects/avr-temperature-controller.md) | Real-time control firmware with temperature sensing, EEPROM, LCD, rotary encoder, timers, interrupts, and PWM. | AVR · FSMs · PWM · EEPROM |
-| [👶 Baby Cry Monitoring System](https://github.com/ariasgua/Cry_babies_monitor) | Raspberry Pi audio analysis publishes MQTT events to a parent dashboard with an alarm and acknowledgment control. | Raspberry Pi · Python · MQTT · FFT |
+</details>
 
-The four project writeups above describe hardware and design work. The Baby Cry Monitoring link opens the public source repository.
+## 🛠️ The repair
 
----
+The fabricated PCB was missing a capacitor needed by the filter. During bring-up, we traced the behavior with an oscilloscope, compared the board against the schematic, and added the component by manually exposing and modifying the relevant copper. We also reworked solder joints and checked for shorts. After the repair, the guitar produced the intended audible suppression of the G string.
 
-## ⚡ Experience at a glance
+```mermaid
+flowchart LR
+    A["Unexpected response"] --> B["Measure signals"]
+    B --> C["Compare to schematic"]
+    C --> D["Add missing capacitor"]
+    D --> E["Retest the guitar"]
+```
 
-| Organization | Work |
-| --- | --- |
-| **Kapadia Lab, USC** | Research assistant building Python EDA workflows for hardware-design agents and validating RTL and circuit behavior. |
-| **Siemens** | Project engineering intern supporting Cerberus PRO system bring-up, Linux/Python firmware workflows, and technical documentation. |
-| **M/Y Sindbad** | Marine systems engineering technician diagnosing electrical and electromechanical failures and establishing onboard engineering records. |
-| **Super Computing In Pocket, USC** | Research assistant benchmarking hardware-aware LLM quantization on constrained GPUs. |
-| **USC Information Technology Services** | Lab technician supporting classroom equipment, troubleshooting, and service requests. |
+<details>
+<summary><strong>🧪 Open the bring-up checklist</strong></summary>
 
-I also worked in a security operations internship at Soluciones Seguras and evaluated solar PV systems at Pass Solar in Panama.
+1. Calculate a 196 Hz notch using the available component values.
+2. Simulate the response in LTspice and test the stages on a breadboard.
+3. Route the PCB in KiCad with attention to placement and grounding.
+4. Assemble SMD and through-hole parts, then inspect and rework joints.
+5. Verify the supply rails and LED, inspect waveforms, and listen to the output.
+6. Diagnose the missing capacitor, repair the board, and retest.
 
----
+</details>
 
-## 🌱 Beyond the lab
+## 🗂️ Open the lab notebook
 
-- **Sustainability Lead, USC Makers Club:** Coordinate electronics collection, repair, and reuse initiatives.
-- **Founder and former President, SET Club:** Led solar-panel installations for communities without grid access and coordinated electronics donations.
+<details>
+<summary><strong>01 · View the schematic</strong></summary>
 
----
+[![KiCad circuit schematic for the guitar filter and power stages](kicad-schematic.png)](kicad-schematic.png)
 
-## 📬 Let's build reliable hardware
+The image shows the designed circuit. The native KiCad files are not included in this README package.
 
-I'm seeking **Summer 2027** opportunities in digital hardware, FPGA/RTL, hardware verification, firmware, and embedded systems.
+</details>
 
-**[ariasgua@usc.edu](mailto:ariasgua@usc.edu)** · **[LinkedIn](https://www.linkedin.com/in/paula-arias-guardia/)**
+<details>
+<summary><strong>02 · Explore the routed board and 3D views</strong></summary>
 
-*Design · Simulate · Build · Measure · Debug · Iterate*
+| Copper routing | KiCad 3D front |
+| :--: | :--: |
+| [![KiCad routing of the custom PCB](pcb-routing.png)](pcb-routing.png) | [![KiCad 3D render of the front of the PCB](pcb-3d-front.png)](pcb-3d-front.png) |
+
+[![KiCad 3D render of the reverse side of the PCB](pcb-3d-back.png)](pcb-3d-back.png)
+
+</details>
+
+<details>
+<summary><strong>03 · See the oscilloscope check</strong></summary>
+
+[![Oscilloscope traces during filter-stage testing](oscilloscope-test.jpg)](oscilloscope-test.jpg)
+
+We used the oscilloscope during breadboard and final hardware testing, and a multimeter to verify power delivery.
+
+</details>
+
+## ✅ What we verified
+
+- **Built a working instrument:** the pickup, switch, LED, PCB, output jack, and speaker formed a functioning signal path.
+- **Suppressed the intended note:** the final system audibly reduced the open G string after the PCB repair.
+- **Learned where theory met hardware:** the observed quality factor was lower than predicted; there is no published measured frequency sweep or exact attenuation figure.
+
+**Tools and components:** KiCad · LTspice · LM324 · TC7660 · twin-T filter · oscilloscope · multimeter · SMD and through-hole soldering.
+
+<sub>Project: EE 202L, May 2026 · Built by Paula Arias and Lucia Miles · Images extracted from the team lab report.</sub>
+
+[← Back to Paula's featured hardware projects](../README.md#-featured-hardware-projects)
